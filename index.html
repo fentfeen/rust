@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Server Wipe Countdown</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        #countdown {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>Next Rust Server Wipe Countdown</h1>
+    <div id="countdown">Loading...</div>
+    <footer>Wipes every Monday and Friday at 3 PM AEST</footer>
+
+    <script>
+        function getNextWipeDate() {
+            const now = new Date();
+
+            // Create a date object in AEST (UTC+10 or UTC+11 with daylight saving)
+            const aestOffset = 10 * 60; // AEST is UTC+10
+            const isDST = (now.getTimezoneOffset() === -660); // Detect daylight saving (UTC+11)
+            const offsetMinutes = aestOffset + (isDST ? 60 : 0);
+
+            // Get AEST current time
+            const aestNow = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + offsetMinutes * 60000);
+
+            // Determine next Monday or Friday at 3 PM AEST
+            const day = aestNow.getUTCDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
+            const hour = aestNow.getUTCHours();
+
+            let daysUntilNextWipe;
+            if (day === 1 && hour < 15) {
+                // It's Monday before 3 PM
+                daysUntilNextWipe = 0;
+            } else if (day === 5 && hour < 15) {
+                // It's Friday before 3 PM
+                daysUntilNextWipe = 0;
+            } else if (day < 5) {
+                // Next Friday
+                daysUntilNextWipe = 5 - day;
+            } else {
+                // Next Monday
+                daysUntilNextWipe = (8 - day) % 7;
+            }
+
+            const nextWipe = new Date(aestNow);
+            nextWipe.setDate(aestNow.getUTCDate() + daysUntilNextWipe);
+            nextWipe.setUTCHours(15, 0, 0, 0); // Set to 3 PM AEST
+            nextWipe.setMinutes(nextWipe.getMinutes() - offsetMinutes); // Convert back to local time
+
+            return nextWipe;
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const nextWipe = getNextWipeDate();
+            const timeDiff = nextWipe - now;
+
+            if (timeDiff <= 0) {
+                document.getElementById("countdown").innerText = "It's wipe time!";
+                setTimeout(updateCountdown, 1000); // Check again in 1 second
+                return;
+            }
+
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+            const dayString = days > 0 ? `${days}d ` : "";
+            document.getElementById("countdown").innerText =
+                `${dayString}${hours}h ${minutes}m ${seconds}s`;
+
+            setTimeout(updateCountdown, 1000); // Update every second
+        }
+
+        updateCountdown();
+    </script>
+</body>
+</html>
