@@ -35,43 +35,57 @@
 <body>
     <h1>Next Rust Server Wipe Countdown</h1>
     <div id="countdown">Loading...</div>
-    <footer>Wipes every Monday and Friday at 3 PM AEST</footer>
+    <footer>Wipes every Monday and Friday</footer>
 
     <script>
+        const webhookUrl = "https://discord.com/api/webhooks/1318141118440804362/S1JZakcLPrNtsFf41ci4kwrM-5POXjvJArX3j2JYQmmkTuMllb3v65Sjd-jI80Er2XG-"; // Replace with your Discord webhook URL
+
+        function sendDiscordNotification() {
+            const embed = {
+                title: "Rust server has been wiped!",
+                description: "To see when the server wipes, click [here](https://rustcd.netlify.app)\n\n**Join ip:** 172.111.33.29:28015",
+                color: 15158332 // Red color
+            };
+
+            const payload = {
+                content: "@everyone",
+                embeds: [embed]
+            };
+
+            fetch(webhookUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Failed to send Discord notification:", response.statusText);
+                }
+            })
+            .catch(error => console.error("Error sending Discord notification:", error));
+        }
+
         function getNextWipeDate() {
             const now = new Date();
+            const daysUntilMonday = (1 - now.getDay() + 7) % 7; // Days to next Monday
+            const daysUntilFriday = (5 - now.getDay() + 7) % 7; // Days to next Friday
 
-            // Create a date object in AEST (UTC+10 or UTC+11 with daylight saving)
-            const aestOffset = 10 * 60; // AEST is UTC+10
-            const isDST = (now.getTimezoneOffset() === -660); // Detect daylight saving (UTC+11)
-            const offsetMinutes = aestOffset + (isDST ? 60 : 0);
-
-            // Get AEST current time
-            const aestNow = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + offsetMinutes * 60000);
-
-            // Determine next Monday or Friday at 3 PM AEST
-            const day = aestNow.getUTCDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
-            const hour = aestNow.getUTCHours();
-
-            let daysUntilNextWipe;
-            if (day === 1 && hour < 15) {
-                // It's Monday before 3 PM
-                daysUntilNextWipe = 0;
-            } else if (day === 5 && hour < 15) {
-                // It's Friday before 3 PM
-                daysUntilNextWipe = 0;
-            } else if (day < 5) {
-                // Next Friday
-                daysUntilNextWipe = 5 - day;
-            } else {
-                // Next Monday
-                daysUntilNextWipe = (8 - day) % 7;
+            // Determine whether the next wipe is Monday or Friday
+            let daysUntilNextWipe = daysUntilMonday;
+            if (now.getDay() > 1 && now.getDay() < 5) {
+                daysUntilNextWipe = daysUntilFriday;
             }
 
-            const nextWipe = new Date(aestNow);
-            nextWipe.setDate(aestNow.getUTCDate() + daysUntilNextWipe);
-            nextWipe.setUTCHours(15, 0, 0, 0); // Set to 3 PM AEST
-            nextWipe.setMinutes(nextWipe.getMinutes() - offsetMinutes); // Convert back to local time
+            const nextWipe = new Date(now);
+            nextWipe.setDate(now.getDate() + daysUntilNextWipe);
+            nextWipe.setHours(15, 0, 0, 0); // Set time to 3 PM AEST
+
+            // Adjust to AEST (UTC+10)
+            const aestOffset = 10 * 60; // AEST is UTC+10
+            const currentOffset = now.getTimezoneOffset();
+            nextWipe.setMinutes(nextWipe.getMinutes() + aestOffset + currentOffset);
 
             return nextWipe;
         }
@@ -83,16 +97,24 @@
 
             if (timeDiff <= 0) {
                 document.getElementById("countdown").innerText = "It's wipe time!";
-                setTimeout(updateCountdown, 1000); // Check again in 1 second
+
+                // Send a Discord notification
+                sendDiscordNotification();
+
+                // Wait 10 minutes after the wipe, then restart the countdown
+                setTimeout(() => {
+                    updateCountdown();
+                }, 10 * 60 * 1000);
                 return;
             }
 
-            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             const dayString = days > 0 ? `${days}d ` : "";
+
             document.getElementById("countdown").innerText =
                 `${dayString}${hours}h ${minutes}m ${seconds}s`;
 
