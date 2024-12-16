@@ -35,10 +35,12 @@
 <body>
     <h1>Next Rust Server Wipe Countdown</h1>
     <div id="countdown">Loading...</div>
-    <footer>Wipes every Monday and Friday</footer>
+    <footer>Wipes every Monday and Friday at 3 PM AEST</footer>
 
     <script>
-        const webhookUrl = "https://discord.com/api/webhooks/1318141118440804362/S1JZakcLPrNtsFf41ci4kwrM-5POXjvJArX3j2JYQmmkTuMllb3v65Sjd-jI80Er2XG-"; // Replace with your Discord webhook URL
+        const webhookUrl = "YOUR_DISCORD_WEBHOOK_URL"; // Replace with your Discord webhook URL
+
+        let notificationSent = false; // Track if a notification has been sent for the current wipe
 
         function sendDiscordNotification() {
             const embed = {
@@ -98,11 +100,15 @@
             if (timeDiff <= 0) {
                 document.getElementById("countdown").innerText = "It's wipe time!";
 
-                // Send a Discord notification
-                sendDiscordNotification();
+                // Send a Discord notification if not already sent
+                if (!notificationSent) {
+                    sendDiscordNotification();
+                    notificationSent = true;
+                }
 
                 // Wait 10 minutes after the wipe, then restart the countdown
                 setTimeout(() => {
+                    notificationSent = false; // Reset notification flag for the next wipe
                     updateCountdown();
                 }, 10 * 60 * 1000);
                 return;
