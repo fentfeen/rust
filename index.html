@@ -38,37 +38,6 @@
     <footer>Wipes every Monday and Friday at 3 PM AEST</footer>
 
     <script>
-        const webhookUrl = "YOUR_DISCORD_WEBHOOK_URL"; // Replace with your Discord webhook URL
-
-        let notificationSent = false; // Track if a notification has been sent for the current wipe
-
-        function sendDiscordNotification() {
-            const embed = {
-                title: "Rust server has been wiped!",
-                description: "To see when the server wipes, click [here](https://rustcd.netlify.app)\n\n**Join ip:** 172.111.33.29:28015",
-                color: 15158332 // Red color
-            };
-
-            const payload = {
-                content: "@everyone",
-                embeds: [embed]
-            };
-
-            fetch(webhookUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error("Failed to send Discord notification:", response.statusText);
-                }
-            })
-            .catch(error => console.error("Error sending Discord notification:", error));
-        }
-
         function getNextWipeDate() {
             const now = new Date();
             const daysUntilMonday = (1 - now.getDay() + 7) % 7; // Days to next Monday
@@ -99,18 +68,7 @@
 
             if (timeDiff <= 0) {
                 document.getElementById("countdown").innerText = "It's wipe time!";
-
-                // Send a Discord notification if not already sent
-                if (!notificationSent) {
-                    sendDiscordNotification();
-                    notificationSent = true;
-                }
-
-                // Wait 10 minutes after the wipe, then restart the countdown
-                setTimeout(() => {
-                    notificationSent = false; // Reset notification flag for the next wipe
-                    updateCountdown();
-                }, 10 * 60 * 1000);
+                setTimeout(updateCountdown, 1000); // Check again in 1 second
                 return;
             }
 
